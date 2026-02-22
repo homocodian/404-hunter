@@ -1,0 +1,29 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+/build/
+
+# Test files
+*.test
+*.out
+coverage.out
+
+# Vendor
+/vendor/
+
+# IDEs and editors
+.vscode/
+.idea/
+.zed/
+*.swp
+
+# OS
+.DS_Store
+*.tmp
+
+# Temporary files/dirs
+tmp
