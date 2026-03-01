@@ -47,6 +47,7 @@ form.addEventListener("submit", (event) => {
       return response.json();
     })
     .then((data) => {
+      console.log(data);
       const strong = document.createElement("strong");
       strong.textContent = `Found ${data.deadLinks.length} dead links`;
 
