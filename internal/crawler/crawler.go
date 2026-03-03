@@ -45,21 +45,22 @@ func (c *Crawler) Start(ctx context.Context, startURL string) []string {
 			select {
 			case c.queue <- startURL:
 			case <-ctx.Done():
+				wg.Done()
 			}
 		}()
 	}
 
-	for i := 0; i < c.workers; i++ {
+	for range c.workers {
 		go func() {
 			for {
 				select {
-				case <-ctx.Done(): // Handle graceful shutdown
+				case <-ctx.Done():
 					return
 				case urlStr, ok := <-c.queue:
 					if !ok {
 						return
 					}
-					c.processWithGW(urlStr, &wg)
+					c.processWithGW(ctx, urlStr, &wg)
 					wg.Done()
 				}
 			}
@@ -81,13 +82,21 @@ func (c *Crawler) Start(ctx context.Context, startURL string) []string {
 	return c.broken.GetAll()
 }
 
-func (c *Crawler) processWithGW(rawURL string, wg *sync.WaitGroup) {
-	baseURL, _ := url.Parse(rawURL)
+func (c *Crawler) processWithGW(ctx context.Context, rawURL string, wg *sync.WaitGroup) {
+	baseURL, err := url.Parse(rawURL)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	if !c.isAllowed(baseURL.Hostname()) {
-		resp, err := c.client.Head(rawURL)
+		req, _ := http.NewRequestWithContext(ctx, "HEAD", rawURL, nil)
+		resp, err := c.client.Do(req)
 		if err != nil {
-			c.broken.Add(rawURL)
+			if ctx.Err() == nil {
+				c.broken.Add(rawURL)
+			}
+			log.Println(err)
 			return
 		}
 		defer resp.Body.Close()
@@ -98,9 +107,17 @@ func (c *Crawler) processWithGW(rawURL string, wg *sync.WaitGroup) {
 		return
 	}
 
-	resp, err := c.client.Get(rawURL)
+	req, err := http.NewRequestWithContext(ctx, "GET", rawURL, nil)
 	if err != nil {
-		log.Println(err.Error())
+		log.Println(err)
+		return
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		if ctx.Err() == nil {
+			log.Println("Request error:", err)
+		}
 		return
 	}
 	defer resp.Body.Close()
@@ -118,7 +135,7 @@ func (c *Crawler) processWithGW(rawURL string, wg *sync.WaitGroup) {
 
 	html, err := html.Parse(resp.Body)
 	if err != nil {
-		log.Println(err.Error())
+		log.Println(err)
 		return
 	}
 
@@ -137,7 +154,11 @@ func (c *Crawler) processWithGW(rawURL string, wg *sync.WaitGroup) {
 		if c.visited.Add(norm) {
 			wg.Add(1)
 			go func(l string) {
-				c.queue <- l
+				select {
+				case c.queue <- l:
+				case <-ctx.Done():
+					wg.Done()
+				}
 			}(norm)
 		}
 	}

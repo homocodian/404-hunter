@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/homocodian/404-hunter/internal/client"
 	"github.com/homocodian/404-hunter/internal/config"
 	"github.com/homocodian/404-hunter/internal/crawler"
 	"github.com/homocodian/404-hunter/internal/parser"
@@ -22,16 +23,7 @@ type RequestUrl struct {
 }
 
 func CreateServer(config *config.Config) *http.Server {
-	var httpClient = &http.Client{
-		Timeout: 3 * time.Second,
-		Transport: &http.Transport{
-			ResponseHeaderTimeout: 2 * time.Second,
-			TLSHandshakeTimeout:   2 * time.Second,
-			MaxIdleConns:          1000,
-			MaxIdleConnsPerHost:   config.Workers,
-			IdleConnTimeout:       90 * time.Second,
-		},
-	}
+	httpClient := client.NewHttpClient(config)
 
 	mux := http.NewServeMux()
 
@@ -59,9 +51,9 @@ func CreateServer(config *config.Config) *http.Server {
 
 		switch {
 		case endTime > time.Minute:
-			fmt.Printf("%d minutes\n", endTime/time.Minute)
+			fmt.Printf("%s took %d minutes\n", requestUrl.Url, endTime/time.Minute)
 		case endTime > time.Second:
-			fmt.Printf("%d seconds\n", endTime/time.Second)
+			fmt.Printf("%s took %d seconds\n", requestUrl.Url, endTime/time.Second)
 		default:
 			fmt.Printf("%d milliseconds\n", endTime/time.Millisecond)
 		}
