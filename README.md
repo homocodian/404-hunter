@@ -25,7 +25,7 @@ git clone https://github.com/homocodian/404-hunter.git
 cd 404-hunter
 
 # Build the CLI tool
-go build -o 404-hunter cmd/404-hunter/main.go
+go build -o 404-hunter main.go
 ```
 
 ---
