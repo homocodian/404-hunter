@@ -38,20 +38,16 @@ go build -o 404-hunter main.go
 # Scan a single URL
 ./404-hunter https://example.com
 
-# Scan a file with multiple URLs
-./404-hunter -f urls.txt
-
 # Export results
 ./404-hunter https://example.com -o results.json
 ```
 
 **Options:**
 
-| Flag        | Description                                |
-| ----------- | ------------------------------------------ |
-| `-f`        | Path to a file containing URLs             |
-| `-o`        | Output file (JSON or CSV)                  |
-| `--threads` | Number of concurrent requests (default: 5) |
+| Flag | Description                    |
+| ---- | ------------------------------ |
+| `-o` | Output file                    |
+| `-w` | Number of workers (default: 5) |
 
 ---
 
@@ -65,23 +61,12 @@ go build -o 404-hunter main.go
 
 2. Open your browser at `http://localhost:5000`
 3. Enter the URLs you want to scan
-4. Download results in **JSON** or **CSV**
+4. Download results in **JSON**
 
 ---
 
-## Example Output 📝
+## Example Output (Broken links)
 
 ```json
-[
-  {
-    "url": "https://example.com/page1",
-    "status": 200,
-    "message": "OK"
-  },
-  {
-    "url": "https://example.com/broken",
-    "status": 404,
-    "message": "Not Found"
-  }
-]
+["https://example.com/page1", "https://example.com/broken"]
 ```
